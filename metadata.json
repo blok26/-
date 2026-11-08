@@ -1,0 +1,6 @@
+{
+  "name": "ارسمها لو تقدر",
+  "description": "لعبة عربية تفاعلية لشخصين: رسم وتخمين وتواصل صوتي مباشر عبر WebRTC مع مزامنة لحظية في الغرفة.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,103 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$roomCode": {
+        // Meta can be read by authenticated users to verify room existence before joining
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['status', 'createdAt', 'playerCount'])",
+          "status": {
+            ".validate": "newData.isString() && (newData.val() == 'lobby' || newData.val() == 'countdown' || newData.val() == 'drawing' || newData.val() == 'roundResult' || newData.val() == 'gameOver')"
+          },
+          "playerCount": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2"
+          },
+          "hostUid": {
+            ".validate": "newData.isString()"
+          }
+        },
+        // Room full details are readable only by members of the room
+        ".read": "auth != null && (data.child('players/' + auth.uid).exists() || data.child('meta/playerCount').val() < 2)",
+        
+        "settings": {
+          ".write": "auth != null && (data.parent().child('players/' + auth.uid + '/isHost').val() === true || !data.exists())",
+          ".validate": "newData.hasChildren(['roundsCount', 'roundDurationSec'])"
+        },
+
+        "players": {
+          "$uid": {
+            // A player can only write/update their own player profile
+            ".write": "auth != null && (auth.uid === $uid || (data.parent().child(auth.uid + '/isHost').val() === true && !newData.exists()))",
+            ".validate": "newData.hasChildren(['name'])",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 25"
+            }
+          }
+        },
+
+        "presence": {
+          "$uid": {
+            // Presence can be written by the authenticated owner
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+
+        "game": {
+          // Game state can be updated by active room members
+          ".write": "auth != null && data.parent().child('players/' + auth.uid).exists()"
+        },
+
+        "canvas": {
+          "$roundId": {
+            // Canvas strokes and clear actions
+            ".write": "auth != null && data.parent().parent().child('players/' + auth.uid).exists()",
+            "strokes": {
+              "$strokeId": {
+                "meta": {
+                  ".validate": "newData.hasChildren(['color', 'size', 'drawerUid'])",
+                  "color": {
+                    ".validate": "newData.isString() && newData.val().length <= 20"
+                  },
+                  "size": {
+                    ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 50"
+                  },
+                  "drawerUid": {
+                    ".validate": "newData.val() === auth.uid"
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        "guesses": {
+          "$roundId": {
+            "$guessId": {
+              // Guessers add guesses; drawer can validate or mark as correct
+              ".write": "auth != null && data.parent().parent().parent().child('players/' + auth.uid).exists()",
+              ".validate": "newData.hasChildren(['text', 'uid', 'createdAt'])",
+              "text": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+              }
+            }
+          }
+        },
+
+        "signaling": {
+          "$callSessionId": {
+            // WebRTC Signaling exchanged strictly between room participants
+            ".write": "auth != null && data.parent().parent().child('players/' + auth.uid).exists()",
+            ".read": "auth != null && data.parent().parent().child('players/' + auth.uid).exists()"
+          }
+        },
+
+        "results": {
+          ".write": "auth != null && data.parent().child('players/' + auth.uid).exists()"
+        }
+      }
+    }
+  }
+}
