@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+.playwright-cli/
+.playwright/
+.cache/
+.netlify/
+.aistudio/
+dist/
